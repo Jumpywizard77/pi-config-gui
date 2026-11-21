@@ -1,0 +1,15 @@
+# Live Pi agent files, in case a copy lands in the repo — never commit, never
+# publish. Do not remove.
+models.json
+auth.json
+
+node_modules/
+dist/
+*.bak-*
+
+# build / install junk that must never enter git
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+.vite/
+.rollup.cache/

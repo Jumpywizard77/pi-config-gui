@@ -1,0 +1,44 @@
+{
+  "name": "pi-config-gui",
+  "version": "0.1.0",
+  "description": "Local web app for editing Pi agent config files",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "pi-config-gui": "dist/cli.js"
+  },
+  "//": "src/cli.ts starts with '#!/usr/bin/env node'; tsc preserves it and scripts/postbuild.mjs re-asserts it plus the exec bit. engines is the RUNTIME floor for `npx pi-config-gui` (Node 20: global fetch, AbortSignal.timeout, node:http — nothing newer is used in shipped code). The DEV toolchain (vitest) needs a newer Node; see README.",
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json && vite build && node scripts/postbuild.mjs",
+    "smoke": "node scripts/smoke.mjs",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build",
+    "start": "node dist/cli.js",
+    "dev:ui": "vite",
+    "dev:server": "node --watch dist/cli.js --port 8711 --no-open"
+  },
+  "dependencies": {
+    "ajv": "^8.20.0",
+    "diff": "^9.0.0",
+    "jsonc-parser": "^3.3.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.1"
+  }
+}
