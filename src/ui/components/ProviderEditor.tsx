@@ -293,7 +293,10 @@ export function ProviderEditor({
         providerId={entryId}
         models={entry["models"]}
         overrides={entry["modelOverrides"]}
+        baseUrl={baseUrl}
+        apiKey={apiKeyValue}
         onEdits={apply}
+        onToast={onToast}
       />
     </div>
   );
