@@ -9,13 +9,9 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 
 // 1. Vendored schema: dist/core/schema.js reads ./schema-bundled.json relative
 //    to import.meta.url at runtime, but tsc does not copy JSON files.
-//    Guarded until Task 3 lands src/core/schema-bundled.json (Task 1
-//    controller ruling: exists-check so the scaffold build passes).
 const bundledSchema = join(root, "src", "core", "schema-bundled.json");
-if (existsSync(bundledSchema)) {
-  mkdirSync(join(root, "dist", "core"), { recursive: true });
-  copyFileSync(bundledSchema, join(root, "dist", "core", "schema-bundled.json"));
-}
+mkdirSync(join(root, "dist", "core"), { recursive: true });
+copyFileSync(bundledSchema, join(root, "dist", "core", "schema-bundled.json"));
 
 // 2. Shebang: tsc preserves the one in src/cli.ts, but the `bin` entry is
 //    unusable without it, so enforce it instead of trusting the compiler.
