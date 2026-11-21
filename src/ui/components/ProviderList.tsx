@@ -3,11 +3,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { parseJsonc } from "../../core/jsonc";
 import { BUILTIN_PROVIDER_IDS } from "../../core/builtins";
 import { LOCAL_PRESETS, type LocalPreset } from "../../core/presets";
-import type { Issue, JsonValue, PathEdit } from "../../core/types";
+import type { JsonValue, PathEdit } from "../../core/types";
 import type { CurrentDoc, ToastKind } from "../App";
-import { getConfig, saveConfig, type DocId, type SaveResult } from "../api";
+import type { DocId } from "../api";
 import { editInText } from "../editor-path";
 import { addProviderEdits, isLocalhostUrl, parseProviders } from "../provider-logic";
+import { useSaveFates } from "../use-save-fates";
 import { ProviderEditor } from "./ProviderEditor";
 
 type Obj = { [k: string]: JsonValue };
@@ -33,7 +34,8 @@ interface ProviderListProps {
  * architecture): the displayed doc is `editInText(doc.text, edits)` recomputed
  * per edit, and Save compiles the edits to full text client-side and sends it
  * CLASSIC-style (models.json has no rebase path — the staleness base is
- * always the currently-loaded doc's sha). Stale / new_issues handling mirrors
+ * always the currently-loaded doc's sha). Stale / new_issues handling lives
+ * in the shared `useSaveFates` hook (Task 12 extraction) and mirrors
  * RawJsonTab. Switching tabs discards pending edits (React remount) — App
  * confirms via onDirty.
  */
@@ -44,9 +46,20 @@ export function ProviderList({ doc, loadNonce, onSaved, onReload, onToast, onDir
   const [dialogOpen, setDialogOpen] = useState(false);
   /** Preset-dialog handoff: probe this baseUrl once when its editor mounts. */
   const [autoProbe, setAutoProbe] = useState<{ id: string; baseUrl: string } | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [stale, setStale] = useState(false);
-  const [blockedIssues, setBlockedIssues] = useState<Issue[] | null>(null);
+  const { saving, stale, blockedIssues, resetFates, runSave, forceSave } = useSaveFates({
+    doc: "models",
+    onToast,
+    onReload,
+    onOk: (body, outcome) => {
+      onSaved("models", body.text, outcome.sha256, outcome.backupPath);
+      setEdits([]);
+    },
+    onConflict: (entries) => {
+      // Cannot normally occur on classic saves; the shared union covers it.
+      onToast(`pi changed ${entries.join(", ")} in models.json — reloaded`, "error");
+      onReload();
+    },
+  });
 
   useEffect(() => {
     setEdits([]);
@@ -54,8 +67,7 @@ export function ProviderList({ doc, loadNonce, onSaved, onReload, onToast, onDir
     setNewProviderId("");
     setDialogOpen(false);
     setAutoProbe(null);
-    setStale(false);
-    setBlockedIssues(null);
+    resetFates();
   }, [loadNonce]);
 
   const dirty = edits.length > 0;
@@ -94,63 +106,9 @@ export function ProviderList({ doc, loadNonce, onSaved, onReload, onToast, onDir
     setEdits((previous) => [...previous, ...newEdits]);
   }, []);
 
-  const handleOutcome = (outcome: SaveResult): void => {
-    if (outcome.ok) {
-      setStale(false);
-      setBlockedIssues(null);
-      if (derived !== null) onSaved("models", derived, outcome.sha256, outcome.backupPath);
-      setEdits([]);
-      return;
-    }
-    switch (outcome.kind) {
-      case "stale":
-        setStale(true);
-        setBlockedIssues(null);
-        break;
-      case "new_issues":
-        setStale(false);
-        setBlockedIssues(outcome.newIssues);
-        break;
-      case "conflict":
-        // Cannot normally occur on classic saves; the shared union covers it.
-        onToast(`pi changed ${outcome.entries.join(", ")} in models.json — reloaded`, "error");
-        onReload();
-        break;
-      case "error":
-        onToast(`Save failed: HTTP ${outcome.status}${outcome.status === 0 ? " (server unreachable)" : ""}.`, "error");
-        break;
-    }
-  };
-
   const save = async (): Promise<void> => {
     if (derived === null) return;
-    setSaving(true);
-    try {
-      handleOutcome(await saveConfig({ doc: "models", text: derived, baseSha256: doc.sha256, baseIssues: doc.issues }));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Force save = refetch (fresh disk sha) + explicit re-save of the DERIVED
-  // text against that fresh base (RawJsonTab semantics; edits are kept).
-  const forceSave = async (): Promise<void> => {
-    if (derived === null) return;
-    setSaving(true);
-    try {
-      let fresh;
-      try {
-        fresh = await getConfig("models");
-      } catch (err: unknown) {
-        onToast(`Could not refresh the file from disk: ${err instanceof Error ? err.message : String(err)}`, "error");
-        return;
-      }
-      handleOutcome(
-        await saveConfig({ doc: "models", text: derived, baseSha256: fresh.sha256, baseIssues: fresh.issues }),
-      );
-    } finally {
-      setSaving(false);
-    }
+    await runSave({ doc: "models", text: derived, baseSha256: doc.sha256, baseIssues: doc.issues });
   };
 
   if (parseBroken) {
@@ -181,7 +139,18 @@ export function ProviderList({ doc, loadNonce, onSaved, onReload, onToast, onDir
           <button type="button" onClick={onReload} disabled={saving}>
             Reload
           </button>{" "}
-          <button type="button" onClick={() => void forceSave()} disabled={saving || !dirty}>
+          <button
+            type="button"
+            onClick={() =>
+              void forceSave((fresh) => ({
+                doc: "models",
+                text: derived ?? "",
+                baseSha256: fresh.sha256,
+                baseIssues: fresh.issues,
+              }))
+            }
+            disabled={saving || !dirty || derived === null}
+          >
             Force save
           </button>{" "}
           <span className="hint">(Force save overwrites the disk copy with your edited text — it is

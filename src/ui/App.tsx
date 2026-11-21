@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Issue } from "../core/types";
 import { getConfig, getState, type DocId, type StatePayload } from "./api";
+import { AuthKeysTab } from "./components/AuthKeysTab";
 import { ProviderList } from "./components/ProviderList";
 import { RawJsonTab } from "./components/RawJsonTab";
 import { SchemaBadge } from "./components/SchemaBadge";
@@ -49,14 +50,10 @@ const errorMessage = (err: unknown): string => (err instanceof Error ? err.messa
 
 type TabId = "providers" | "keys" | "raw";
 
-const TABS: { id: TabId; label: string; placeholder: string | null }[] = [
-  { id: "providers", label: "Providers & Models", placeholder: null },
-  {
-    id: "keys",
-    label: "API Keys",
-    placeholder: "The API Keys editor is coming in Task 12.",
-  },
-  { id: "raw", label: "Raw JSON", placeholder: null },
+const TABS: { id: TabId; label: string }[] = [
+  { id: "providers", label: "Providers & Models" },
+  { id: "keys", label: "API Keys" },
+  { id: "raw", label: "Raw JSON" },
 ];
 
 /** Which document each tab operates on (providers → models, keys → auth). */
@@ -216,8 +213,6 @@ export function App() {
     [rawDoc, dirtyLabel],
   );
 
-  const activeTab = TABS.find((entry) => entry.id === tab);
-
   return (
     <div className="app">
       <header className="topbar">
@@ -266,9 +261,7 @@ export function App() {
 
       <main className="content">
         {loadError !== null && <div className="error-banner">{loadError}</div>}
-        {activeTab?.placeholder !== null && activeTab?.placeholder !== undefined ? (
-          <section className="placeholder">{activeTab.placeholder}</section>
-        ) : tab === "providers" ? (
+        {tab === "providers" ? (
           currentDoc === null || currentDoc.doc !== "models" ? (
             <section className="placeholder">
               {loadError === null ? "Loading models.json…" : "Nothing open — see the error above."}
@@ -281,6 +274,20 @@ export function App() {
               onReload={reloadCurrentDoc}
               onToast={addToast}
               onDirty={setProvidersDirty}
+            />
+          )
+        ) : tab === "keys" ? (
+          currentDoc === null || currentDoc.doc !== "auth" ? (
+            <section className="placeholder">
+              {loadError === null ? "Loading auth.json…" : "Nothing open — see the error above."}
+            </section>
+          ) : (
+            <AuthKeysTab
+              doc={currentDoc}
+              loadNonce={loadNonce}
+              onReload={reloadCurrentDoc}
+              onToast={addToast}
+              onDirty={setKeysDirty}
             />
           )
         ) : (
