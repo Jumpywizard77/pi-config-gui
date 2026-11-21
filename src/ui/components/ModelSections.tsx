@@ -11,6 +11,7 @@ import {
   envKeyWarningText,
   isCommandKeyRejection,
   mergeImportEdits,
+  modelEditorKeys,
   planImportRows,
   renameModelEdits,
   renameOverrideEdits,
@@ -63,6 +64,9 @@ export function ModelSections({
   // Index-aligned: non-object/malformed entries hold their slot as "".
   const modelIdsAligned = modelList.map((m) => (isObj(m) && typeof m["id"] === "string" ? m["id"] : ""));
   const modelIds = modelIdsAligned.filter((id) => id !== "");
+  // ENTRY-stable React keys (id-aware): survives a rename's index shift so an
+  // editor's keyDraft can never be inherited by a different entry.
+  const modelKeys = modelEditorKeys(modelList);
   const overridesBroken = overrides !== undefined && !isObj(overrides);
   const overrideEntries: [string, Obj][] = isObj(overrides)
     ? Object.entries(overrides).flatMap(([key, value]) => (isObj(value) ? [[key, value] as [string, Obj]] : []))
@@ -101,14 +105,14 @@ export function ModelSections({
 
       {modelsBroken && (
         <div className="warning-banner">
-          <code>providers.{providerId}.models</code> is not an array in the file — edit it in the
-          Raw JSON tab; the list below shows the entries that do parse.
+          <code>providers.{providerId}.models</code> is not an array in the file — its entries
+          cannot be listed or edited here; use the Raw JSON tab.
         </div>
       )}
 
       {modelList.map((model, index) =>
         isObj(model) ? (
-          <div className="model-card" key={index}>
+          <div className="model-card" key={modelKeys[index]}>
             <ModelEditor
               entry={model}
               entryPath={["providers", providerId, "models", index]}
@@ -127,7 +131,7 @@ export function ModelSections({
             />
           </div>
         ) : (
-          <div className="model-card" key={index}>
+          <div className="model-card" key={modelKeys[index]}>
             <div className="warning-banner">
               models[{index}] is not an object ({JSON.stringify(model)}) — edit it in the Raw JSON
               tab.

@@ -160,6 +160,28 @@ export function planImportRows(discoveredIds: string[], existingIds: string[]): 
 }
 
 /**
+ * React keys for the model-entry editors (fix round 1): keyed by the ENTRY
+ * (id), not the array slot. A rename is delete-at-index + append-at-end, so
+ * index-keyed editors would keep a shifted entry's card (and its in-progress
+ * `keyDraft`) attached to a DIFFERENT entry. `idx:<index>` is the fallback
+ * for non-object/id-less slots; duplicate ids (hand-edited files) get
+ * numeric suffixes so keys stay unique.
+ */
+export function modelEditorKeys(entries: JsonValue[]): string[] {
+  const base = entries.map((entry, index) =>
+    typeof entry === "object" && entry !== null && !Array.isArray(entry) && typeof entry["id"] === "string" && entry["id"] !== ""
+      ? `id:${entry["id"] as string}`
+      : `idx:${index}`,
+  );
+  const seen = new Map<string, number>();
+  return base.map((key) => {
+    const count = seen.get(key) ?? 0;
+    seen.set(key, count + 1);
+    return count === 0 ? key : `${key}#${count}`;
+  });
+}
+
+/**
  * Whether a failed `api.probe` call is the server's machine-readable refusal
  * to test a `!command` apiKey (HTTP 400 `command_key`, pre-network — the GUI
  * never executes it). Drives the "resolve the key to test" notice.

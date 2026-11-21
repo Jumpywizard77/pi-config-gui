@@ -8,6 +8,7 @@ import {
   envKeyWarningText,
   isCommandKeyRejection,
   mergeImportEdits,
+  modelEditorKeys,
   planImportRows,
   renameModelEdits,
   renameOverrideEdits,
@@ -197,6 +198,37 @@ describe("planImportRows (review list state)", () => {
 
   it("an all-existing probe result checks nothing (re-run never re-imports)", () => {
     expect(planImportRows(["a"], ["a"]).every((row) => !row.checked)).toBe(true);
+  });
+});
+
+describe("modelEditorKeys (id-aware React keys — fix round 1)", () => {
+  it("uses id:<id> for entries with a string id, idx:<index> otherwise", () => {
+    expect(modelEditorKeys([{ id: "a" }, 5, { name: "no id" }, { id: "b" }])).toEqual([
+      "id:a",
+      "idx:1",
+      "idx:2",
+      "id:b",
+    ]);
+  });
+
+  it("a rename's delete+append keeps the OTHER entries' keys stable (no remount of the shifted neighbours)", () => {
+    const before = modelEditorKeys([{ id: "old" }, { id: "b" }, { id: "c" }]);
+    // renameModelEdits("p",0,…) yields [b, c, new] after applying.
+    const after = modelEditorKeys([{ id: "b" }, { id: "c" }, { id: "new" }]);
+    expect(before).toEqual(["id:old", "id:b", "id:c"]);
+    expect(after).toEqual(["id:b", "id:c", "id:new"]);
+    // b and c carry the same keys across the shift → their editors (keyDraft
+    // lifecycle) stay with THEIR entries; the renamed entry remounts fresh.
+  });
+
+  it("duplicate ids (hand-edited files) never produce duplicate keys", () => {
+    const keys = modelEditorKeys([{ id: "a" }, { id: "a" }, { id: "a" }]);
+    expect(keys).toEqual(["id:a", "id:a#1", "id:a#2"]);
+    expect(new Set(keys).size).toBe(3);
+  });
+
+  it("an empty id string falls back to the index key", () => {
+    expect(modelEditorKeys([{ id: "" }])).toEqual(["idx:0"]);
   });
 });
 
