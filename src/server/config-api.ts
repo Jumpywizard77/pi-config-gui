@@ -333,6 +333,12 @@ function isPathEditArray(value: unknown[]): value is PathEdit[] {
     const path = (edit as PathEdit).path;
     return (
       Array.isArray(path) &&
+      // An EMPTY path edits the ROOT: `applyPathEdits` would then REPLACE
+      // THE WHOLE DOCUMENT with the client's value — the one way a stale
+      // OAuth blob could clobber a live token through the rebase path. The
+      // structured tabs only ever address `["<entry>", …]`, so rejecting
+      // `length === 0` costs nothing real and closes that hole (Task 5).
+      path.length > 0 &&
       path.every((segment) => typeof segment === "string" || typeof segment === "number")
     );
   });
