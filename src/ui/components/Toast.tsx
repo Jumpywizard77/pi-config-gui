@@ -1,10 +1,4 @@
-/**
- * TODO(Task 9): App.tsx lands there and owns this type (the sister app
- * defines `export type ToastKind = "info" | "error"` in `src/ui/App.tsx` and
- * this file imports it from `../App`). Declared locally here so the Task 1
- * scaffold typechecks before App exists.
- */
-export type ToastKind = "info" | "error";
+import type { ToastKind } from "../App";
 
 export interface ToastMessage {
   id: number;

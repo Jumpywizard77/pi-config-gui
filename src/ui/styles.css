@@ -52,6 +52,28 @@ body {
   font-size: 12px;
 }
 
+/* pi fork (Task 9): read-only neighbour docs listed under the header. */
+.other-docs-strip {
+  padding: 4px 16px;
+  font-size: 12px;
+  color: var(--fg-dim);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-raised);
+}
+
+.other-doc {
+  display: inline-block;
+  margin-right: 10px;
+  font-family: var(--mono, ui-monospace, monospace);
+}
+
+/* pi fork (Task 9): models.json / auth.json switcher above the raw tab. */
+.doc-picker {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
 .config-picker select {
   min-width: 320px;
   max-width: 520px;

@@ -1,15 +1,5 @@
 import type { Issue } from "../../core/types";
-
-/**
- * TODO(Task 9): the real payload shape lands in `src/ui/api.ts` (sister app:
- * `import type { StatePayload } from "../api"`). Declared locally, fields
- * narrowed to what this panel reads, so the Task 1 scaffold typechecks
- * before the api client exists. Task 9 restores the import and deletes this.
- */
-interface StatePayload {
-  schemaSource: "bundled" | "remote";
-  schemaFetchedAt: string;
-}
+import type { StatePayload } from "../api";
 
 interface ValidationPanelProps {
   issues: Issue[];
