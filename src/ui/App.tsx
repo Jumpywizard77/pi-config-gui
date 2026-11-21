@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Issue } from "../core/types";
 import { getConfig, getState, type DocId, type StatePayload } from "./api";
+import { ProviderList } from "./components/ProviderList";
 import { RawJsonTab } from "./components/RawJsonTab";
 import { SchemaBadge } from "./components/SchemaBadge";
 import { Toast, type ToastMessage } from "./components/Toast";
@@ -49,11 +50,7 @@ const errorMessage = (err: unknown): string => (err instanceof Error ? err.messa
 type TabId = "providers" | "keys" | "raw";
 
 const TABS: { id: TabId; label: string; placeholder: string | null }[] = [
-  {
-    id: "providers",
-    label: "Providers & Models",
-    placeholder: "The Providers & Models editor is coming in Task 10.",
-  },
+  { id: "providers", label: "Providers & Models", placeholder: null },
   {
     id: "keys",
     label: "API Keys",
@@ -271,6 +268,21 @@ export function App() {
         {loadError !== null && <div className="error-banner">{loadError}</div>}
         {activeTab?.placeholder !== null && activeTab?.placeholder !== undefined ? (
           <section className="placeholder">{activeTab.placeholder}</section>
+        ) : tab === "providers" ? (
+          currentDoc === null || currentDoc.doc !== "models" ? (
+            <section className="placeholder">
+              {loadError === null ? "Loading models.json…" : "Nothing open — see the error above."}
+            </section>
+          ) : (
+            <ProviderList
+              doc={currentDoc}
+              loadNonce={loadNonce}
+              onSaved={handleSaved}
+              onReload={reloadCurrentDoc}
+              onToast={addToast}
+              onDirty={setProvidersDirty}
+            />
+          )
         ) : (
           <>
             <div className="doc-picker" role="group" aria-label="Document">
