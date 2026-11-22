@@ -230,6 +230,12 @@ export function AuthKeysTab({ doc, loadNonce, onReload, onToast, onDirty }: Auth
                   {view.key === undefined || view.key === "" ? "no key" : keyFormBadge(classifyKey(view.key))}
                 </span>
               )}
+              {view.kind === "api_key" && view.extra && (
+                <div className="hint">
+                  this entry has fields the structured editor does not model — use Raw JSON to
+                  change them
+                </div>
+              )}
             </div>
           ))}
           {views.length === 0 && <div className="hint">no stored credentials yet</div>}

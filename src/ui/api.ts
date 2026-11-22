@@ -217,8 +217,11 @@ export async function getState(): Promise<StatePayload> {
   const docs: DocState[] = [];
   const otherDocs: { id: string; path: string }[] = [];
   for (const doc of wire.docs) {
-    if (doc.editable) {
-      docs.push({ id: doc.id as DocId, path: doc.path, exists: doc.exists, editable: doc.editable });
+    // Runtime narrowing, not a cast: only the two ids the UI can address
+    // become editable docs; anything else the server claims is editable
+    // falls to the read-only list rather than poisoning DocId.
+    if (doc.editable && (doc.id === "models" || doc.id === "auth")) {
+      docs.push({ id: doc.id, path: doc.path, exists: doc.exists, editable: doc.editable });
     } else {
       otherDocs.push({ id: doc.id, path: doc.path });
     }

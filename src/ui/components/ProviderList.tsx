@@ -141,14 +141,15 @@ export function ProviderList({ doc, loadNonce, onSaved, onReload, onToast, onDir
           </button>{" "}
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
+              if (derived === null) return;
               void forceSave((fresh) => ({
                 doc: "models",
-                text: derived ?? "",
+                text: derived,
                 baseSha256: fresh.sha256,
                 baseIssues: fresh.issues,
-              }))
-            }
+              }));
+            }}
             disabled={saving || !dirty || derived === null}
           >
             Force save

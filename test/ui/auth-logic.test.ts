@@ -52,10 +52,11 @@ describe("parseAuthDoc", () => {
       kind: "api_key",
       key: "sk-ant-1",
       env: { ACCOUNT_ID: "acct-9" },
+      extra: false,
     });
     // api_key WITHOUT a key stays editable (the validator's new_issues copy
     // explains why the server would refuse the save).
-    expect(byId.get("zebra")).toEqual({ id: "zebra", kind: "api_key", env: {} });
+    expect(byId.get("zebra")).toEqual({ id: "zebra", kind: "api_key", env: {}, extra: false });
 
     // Unknown credential types → read-only rows, never blocked or dropped.
     expect(byId.get("github-copilot")).toEqual({
@@ -79,9 +80,36 @@ describe("parseAuthDoc", () => {
       ),
     );
     // A non-string `key` reads as absent; env keeps only its string values
-    // (the permissive auth-schema validator owns the blocking copy).
-    expect(views[0]).toEqual({ id: "a", kind: "api_key", env: { GOOD: "v" } });
-    expect(views[1]).toEqual({ id: "b", kind: "api_key", env: {} });
+    // (the permissive auth-schema validator owns the blocking copy). Both
+    // rows are flagged `extra` — the non-string env values (and b's
+    // non-object env) are fields the structured editor does not model.
+    expect(views[0]).toEqual({ id: "a", kind: "api_key", env: { GOOD: "v" }, extra: true });
+    expect(views[1]).toEqual({ id: "b", kind: "api_key", env: {}, extra: true });
+  });
+
+  it("flags unmodeled fields via extra (false for a purely modeled entry)", () => {
+    const views = parseAuthDoc(
+      doc(
+        `{ "plain": { "type": "api_key", "key": "sk-1" },
+           "withHeaders": { "type": "api_key", "key": "sk-1", "headers": {} },
+           "numericEnv": { "type": "api_key", "env": { "X": 5 } } }`,
+      ),
+    );
+    const byId = new Map(views.map((view) => [view.id, view]));
+    // Fully modeled (type + key only): no warning.
+    expect(byId.get("plain")).toEqual({
+      id: "plain",
+      kind: "api_key",
+      key: "sk-1",
+      env: {},
+      extra: false,
+    });
+    // Own key beyond type/key/env → warned (still editable, brief-mandated).
+    const withHeaders = byId.get("withHeaders");
+    expect(withHeaders !== undefined && withHeaders.kind === "api_key" && withHeaders.extra).toBe(true);
+    // A non-string env value the parser filters out → warned.
+    const numericEnv = byId.get("numericEnv");
+    expect(numericEnv !== undefined && numericEnv.kind === "api_key" && numericEnv.extra).toBe(true);
   });
 
   it("returns no rows for a non-object document", () => {
@@ -134,7 +162,7 @@ describe("setEntryEdits", () => {
     const edits = setEntryEdits(
       "anthropic",
       { key: "sk-new" },
-      { id: "anthropic", kind: "api_key", key: "sk-old", env: {} },
+      { id: "anthropic", kind: "api_key", key: "sk-old", env: {}, extra: false },
     );
     expect(edits[0]!.value).toEqual({ type: "api_key", key: "sk-new" });
   });

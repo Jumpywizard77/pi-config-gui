@@ -7,7 +7,9 @@ import type { JsonValue, PathEdit } from "../core/types";
  * and a string-valued `env` map are editable. Everything else — OAuth and
  * other credential types pi's `/login` manages, future shapes, non-object
  * rows — surfaces as a read-only or shape-error row that this GUI never
- * rewrites (spec anti-goal: no wholesale rewriting of auth.json).
+ * rewrites (spec anti-goal: no wholesale rewriting of auth.json). api_key
+ * rows that carry fields beyond `type`/`key`/`env` are flagged via
+ * `EntryView.extra` and warned about in the UI (editing stays possible).
  *
  * Saves go through the server's REBASE path: every edit is ONE top-level
  * entry rewrite (or delete) at `[id]`, and untouched entries are simply
@@ -15,7 +17,20 @@ import type { JsonValue, PathEdit } from "../core/types";
  */
 
 export type EntryView =
-  | { id: string; kind: "api_key"; key?: string; env: Record<string, string> }
+  | {
+      id: string;
+      kind: "api_key";
+      key?: string;
+      env: Record<string, string>;
+      /**
+       * True when the entry carries fields the structured editor does not
+       * model: own enumerable keys beyond `type`/`key`/`env`, or an `env`
+       * with a non-string value (which parsing filters out of `env`).
+       * Rendered as a warning only — the row stays editable (a structured
+       * save rewrites the entry from the modeled fields, see setEntryEdits).
+       */
+      extra: boolean;
+    }
   | { id: string; kind: "readonly"; type: string }
   | { id: string; kind: "shape_error" };
 
@@ -49,12 +64,22 @@ export function parseAuthDoc(doc: JsonValue): EntryView[] {
     }
     const key = typeof entry["key"] === "string" ? (entry["key"] as string) : undefined;
     const env: Record<string, string> = {};
-    if (entry["env"] !== undefined && isJsonObject(entry["env"])) {
-      for (const [name, value] of Object.entries(entry["env"])) {
-        if (typeof value === "string") env[name] = value;
+    let extra = Object.keys(entry).some((name) => name !== "type" && name !== "key" && name !== "env");
+    if (entry["env"] !== undefined) {
+      if (isJsonObject(entry["env"])) {
+        for (const [name, value] of Object.entries(entry["env"])) {
+          if (typeof value === "string") env[name] = value;
+          else extra = true; // a filtered non-string env value is unmodeled
+        }
+      } else {
+        extra = true; // `env` itself is not an object — nothing here models it
       }
     }
-    views.push(key === undefined ? { id, kind: "api_key", env } : { id, kind: "api_key", key, env });
+    views.push(
+      key === undefined
+        ? { id, kind: "api_key", env, extra }
+        : { id, kind: "api_key", key, env, extra },
+    );
   }
   views.sort((left, right) => (left.id < right.id ? -1 : left.id > right.id ? 1 : 0));
   return views;

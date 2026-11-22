@@ -22,8 +22,11 @@ guesswork. Meanwhile `auth.json` is a file full of live credentials that
 careless editors reformat or clobber while pi is running. This tool:
 
 - **Keeps your files yours.** It edits JSONC *in place*: comments, key
-  order and formatting survive round-trips (only the regions you touch
-  change).
+  order and formatting survive round-trips. Edits to existing fields are
+  surgical — only the regions you touch change. One caveat: *insertions*
+  (new keys, appended array items) are re-emitted by `jsonc-parser` and can
+  reformat *neighbouring* entries — values and comment content survive, but
+  exact placement inside an array you touched can shift.
 - **Edits exactly two documents.** `models.json` gets the full editor;
   `auth.json` gets a key editor with rebase-safe saves. `settings.json`,
   `mcp.json` and `keybindings.json` are detected and listed read-only —
@@ -159,6 +162,11 @@ The GUI treats it accordingly:
   once.
 - **OAuth entries are read-only and byte-stable** — displayed, never
   rewritten, never included in a save.
+- **Structured key editor scope.** The API Keys tab models `type`, `key` and
+  `env` only; an entry carrying any other field (or an `env` value that is
+  not a string) is flagged in the UI — those fields are editable only in the
+  Raw JSON tab, since a structured save rewrites the entry from the three
+  fields it models.
 - **Secrets never leak into logs or output.** Key values are masked in the
   UI, never appear in server logs, validation messages, error strings or
   probe diagnostics; probe requests carry a key only to the endpoint you

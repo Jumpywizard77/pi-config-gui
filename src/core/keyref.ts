@@ -1,14 +1,19 @@
 /**
  * Classification and resolution of pi `auth.json` / `models.json` api-key
- * strings, per pi's documented key forms:
+ * strings, per pi's documented key forms — see the "Value Resolution" /
+ * "Key Resolution" sections of pi's docs (`models.md` / `providers.md` on
+ * pi.dev), the source for the three forms below:
  *
  * - `"!command"`  — the string is executed by pi to obtain the key. This GUI
  *   never executes such strings (global constraint); it only classifies them.
- * - `"$NAME"` / `"${NAME}"` — environment interpolation. `"$"` is escaped by
- *   `"$$"`, and `"$!"` produces a literal `"!"` (so a literal leading `!`
- *   never turns into a command); an unescaped `$` anywhere makes the value an
- *   env-interpolated key.
+ * - `"$NAME"` / `"${NAME}"` — environment interpolation. An unescaped `$`
+ *   anywhere makes the value an env-interpolated key.
  * - anything else — a literal key.
+ *
+ * The escape details — `"$"` is written `"$$"`, and `"$!"` yields a literal
+ * `"!"` (so a literal leading `!` never turns into a command) — are
+ * INFERRED FROM THOSE DOCS and pending verification against pi's source;
+ * the docs state the forms, not the escape grammar.
  *
  * Pure module: resolution takes the environment as an injected record, so
  * callers (probe, auth UI, tests) control which environment is consulted.

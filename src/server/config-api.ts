@@ -311,9 +311,15 @@ export async function saveAuthRebased(
     const entry = String(edit.path[0]);
     if (!touched.includes(entry)) touched.push(entry);
   }
-  const conflicts = touched.filter(
-    (entry) => JSON.stringify(baseObj[entry]) !== JSON.stringify(diskObj[entry]),
-  );
+  const conflicts = touched.filter((entry) => {
+    // Own-property lookup, never a prototype one: a path segment named
+    // "__proto__" must not compare Object.prototype against itself (or
+    // against a real disk value) instead of the entries the client touched.
+    const inBase = Object.prototype.hasOwnProperty.call(baseObj, entry);
+    const inDisk = Object.prototype.hasOwnProperty.call(diskObj, entry);
+    if (!inBase || !inDisk) return inBase !== inDisk; // both-absent = equal, as before
+    return JSON.stringify(baseObj[entry]) !== JSON.stringify(diskObj[entry]);
+  });
   if (conflicts.length > 0) return { ok: false, kind: "conflict", entries: conflicts };
 
   const text = applyPathEdits(diskText, edits);

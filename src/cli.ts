@@ -35,7 +35,12 @@ const USAGE =
   "  --static <dir>     built UI assets dir (default: <package>/dist/ui when it exists)\n" +
   "  --no-open          do not launch a browser\n";
 
-/** Returns parsed options, or prints a message to `stream` (null = fine). */
+/**
+ * Parses argv into a result object: `{ options }` on success, `{ error }`
+ * (a message carrying the usage text) on a bad flag, `{ help: true }` for
+ * `--help`. Prints nothing itself — `main` writes the strings and sets the
+ * exit code.
+ */
 function parseArgs(argv: string[]): { options?: CliOptions; error?: string; help?: boolean } {
   let port = 0;
   let agentDir: string | undefined;

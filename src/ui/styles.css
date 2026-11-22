@@ -74,17 +74,6 @@ body {
   margin-bottom: 10px;
 }
 
-.config-picker select {
-  min-width: 320px;
-  max-width: 520px;
-}
-
-.folder-input {
-  display: inline-flex;
-  gap: 6px;
-  margin-left: 8px;
-}
-
 select,
 input[type="text"],
 button,
@@ -696,42 +685,6 @@ code {
 .dialog h2 {
   margin: 0;
   font-size: 16px;
-}
-
-.upgrade-notice {
-  color: var(--amber);
-  font-size: 13px;
-}
-
-.upgrade-lists {
-  display: flex;
-  gap: 24px;
-  flex-wrap: wrap;
-  font-size: 13px;
-}
-
-.upgrade-lists > div {
-  flex: 1;
-  min-width: 260px;
-}
-
-.upgrade-lists ul {
-  margin: 4px 0;
-  padding-left: 20px;
-}
-
-.upgrade-diff {
-  margin: 0;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--bg-input);
-  padding: 8px 10px;
-  font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
-  font-size: 12.5px;
-  line-height: 1.4;
-  overflow: auto;
-  max-height: 40vh;
-  white-space: pre;
 }
 
 /* ---- pi fork (Task 10): provider tab additions --------------------------- */

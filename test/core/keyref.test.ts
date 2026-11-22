@@ -74,4 +74,15 @@ describe("core/keyref resolveEnvKey", () => {
   it("passesLiteralsThrough", () => {
     expect(resolveEnvKey("sk-plain", {})).toEqual({ ok: true, key: "sk-plain" });
   });
+
+  it("keeps a stray dollar that starts no name literal", () => {
+    // A `$` followed by a digit is not a name: the value resolves as a
+    // literal containing the dollar (no missing-var claim).
+    expect(resolveEnvKey("sk-$1", {})).toEqual({ ok: true, key: "sk-$1" });
+  });
+
+  it("reports each missing var once", () => {
+    // The same name interpolated twice is still one reported missing name.
+    expect(resolveEnvKey("$A$A", {})).toEqual({ ok: false, missing: ["A"] });
+  });
 });

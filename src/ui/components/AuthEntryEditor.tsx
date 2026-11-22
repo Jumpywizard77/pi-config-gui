@@ -54,6 +54,11 @@ export function AuthEntryEditor({ entryId, entry, otherIds, apply, onRenamed }: 
 
   return (
     <div className="provider-editor">
+      {entry.extra && (
+        <div className="warning-banner">
+          this entry has fields the structured editor does not model — use Raw JSON to change them
+        </div>
+      )}
       <div className="field-grid">
         <label>
           <span className="field-label">Provider id (rename = delete + re-create)</span>
