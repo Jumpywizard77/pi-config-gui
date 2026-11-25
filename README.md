@@ -225,7 +225,7 @@ the shebang and exec bit on `dist/cli.js`.
 ## About this code
 
 This codebase was written almost entirely by AI coding agents, directed and
-reviewed by a human who mostly just said "sir, yes sir." It is a
+reviewed by a human who mostly just said "That looks good, do it." It is a
 self-contained fork of opencode-config-gui; the duplication across the folder
 boundary is by design. Expect it to work — 180 tests and a stack of review
 passes say so — but extend it at your own risk.
